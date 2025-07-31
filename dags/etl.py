@@ -19,7 +19,7 @@ with DAG(
         postgres_hook = PostgresHook(postgres_conn_id = "my_postgres_connection")
         ## SQL Query to create a table
         create_table_query = """
-            CREATE TABLE IF NOT EXIST apod_data(
+            CREATE TABLE IF NOT EXISTS apod_data(
                 id SERIAL PRIMARY KEY,
                 title VARCHAR(255),
                 explanation TEXT,
@@ -36,12 +36,13 @@ with DAG(
     
     extract_apod = HttpOperator(
         task_id = "extract_apod", 
-        http_conn_id='nasa_api', ##Connection id defined in airflow
-        endpoint='planatory/apod', ##NASA api endpoint 
+        http_conn_id= 'nasa_api', ##Connection id defined in airflow
+        endpoint='planetary/apod', ##NASA api endpoint 
         method='GET', 
         data={"api_key": "{{conn.nasa_api.extra_dejson.api_key}}"}, ## use the api key from connection
         response_filter= lambda response: response.json(),
     )
+    
     #Step 3 Transform the data 
     
     @task
@@ -82,8 +83,7 @@ with DAG(
     
     
     ## Define the dependencies
-    c= create_table()
-    e = extract_apod()
-    t = transform_apod_data()
-    l = load_data_postgres()
-    v = verify()
+    create_table() >> extract_apod 
+    api_response = extract_apod.output
+    transformed_data = transform_apod_data(api_response)
+    load_data_postgres(transformed_data) 
