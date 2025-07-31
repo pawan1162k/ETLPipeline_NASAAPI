@@ -1,46 +1,218 @@
-Overview
-========
+# README.md
 
-Welcome to Astronomer! This project was generated after you ran 'astro dev init' using the Astronomer CLI. This readme describes the contents of the project, as well as how to run Apache Airflow on your local machine.
+# NASA APOD ETL Pipeline
 
-Project Contents
-================
+A robust ETL (Extract, Transform, Load) pipeline built with Apache Airflow that fetches NASA's Astronomy Picture of the Day (APOD) data, processes it, and loads it into various data destinations.
 
-Your Astro project contains the following files and folders:
+## 🚀 Overview
 
-- dags: This folder contains the Python files for your Airflow DAGs. By default, this directory includes one example DAG:
-    - `example_astronauts`: This DAG shows a simple ETL pipeline example that queries the list of astronauts currently in space from the Open Notify API and prints a statement for each astronaut. The DAG uses the TaskFlow API to define tasks in Python, and dynamic task mapping to dynamically print a statement for each astronaut. For more on how this DAG works, see our [Getting started tutorial](https://www.astronomer.io/docs/learn/get-started-with-airflow).
-- Dockerfile: This file contains a versioned Astro Runtime Docker image that provides a differentiated Airflow experience. If you want to execute other commands or overrides at runtime, specify them here.
-- include: This folder contains any additional files that you want to include as part of your project. It is empty by default.
-- packages.txt: Install OS-level packages needed for your project by adding them to this file. It is empty by default.
-- requirements.txt: Install Python packages needed for your project by adding them to this file. It is empty by default.
-- plugins: Add custom or community plugins for your project to this file. It is empty by default.
-- airflow_settings.yaml: Use this local-only file to specify Airflow Connections, Variables, and Pools instead of entering them in the Airflow UI as you develop DAGs in this project.
+This project demonstrates a production-ready ETL pipeline that:
+- **Extracts** data from NASA's APOD API using HTTP requests
+- **Transforms** the data for analytics and storage optimization
+- **Loads** processed data into multiple destinations (PostgreSQL, AWS S3, Redshift, RDS)
+- **Orchestrates** the entire workflow using Apache Airflow with Astro CLI
 
-Deploy Your Project Locally
-===========================
+## 🏗️ Architecture
 
-Start Airflow on your local machine by running 'astro dev start'.
+```
+NASA APOD API → Airflow (Astro) → Data Transformation → Multiple Destinations
+                    ↓
+               PostgreSQL (Local)
+               AWS S3 (Cloud)
+               AWS Redshift (Cloud)
+               AWS RDS (Cloud)
+```
 
-This command will spin up five Docker containers on your machine, each for a different Airflow component:
+## 🛠️ Tech Stack
 
-- Postgres: Airflow's Metadata Database
-- Scheduler: The Airflow component responsible for monitoring and triggering tasks
-- DAG Processor: The Airflow component responsible for parsing DAGs
-- API Server: The Airflow component responsible for serving the Airflow UI and API
-- Triggerer: The Airflow component responsible for triggering deferred tasks
+- **Orchestration**: Apache Airflow with Astro CLI
+- **Data Source**: NASA APOD API
+- **Local Database**: PostgreSQL (Docker)
+- **Cloud Services**: AWS S3, Redshift, RDS
+- **Containerization**: Docker & Docker Compose
+- **Language**: Python 3.12
 
-When all five containers are ready the command will open the browser to the Airflow UI at http://localhost:8080/. You should also be able to access your Postgres Database at 'localhost:5432/postgres' with username 'postgres' and password 'postgres'.
+## 📋 Prerequisites
 
-Note: If you already have either of the above ports allocated, you can either [stop your existing Docker containers or change the port](https://www.astronomer.io/docs/astro/cli/troubleshoot-locally#ports-are-not-available-for-my-local-airflow-webserver).
+- Python 3.8+
+- Docker and Docker Compose
+- Astro CLI
+- AWS Account (for cloud destinations)
+- NASA API Key ([Get one here](https://api.nasa.gov/))
 
-Deploy Your Project to Astronomer
-=================================
+## 🚀 Quick Start
 
-If you have an Astronomer account, pushing code to a Deployment on Astronomer is simple. For deploying instructions, refer to Astronomer documentation: https://www.astronomer.io/docs/astro/deploy-code/
+### 1. Clone the Repository
+```bash
+git clone <your-repo-url>
+cd nasa-apod-etl-pipeline
+```
 
-Contact
-=======
+### 2. Install Astro CLI
+```bash
+# macOS
+brew install astro
 
-The Astronomer CLI is maintained with love by the Astronomer team. To report a bug or suggest a change, reach out to our support.
-# ETLPipeline_NASAAPI
+# Linux/Windows
+curl -sSL install.astronomer.io | sudo bash -s
+```
+
+### 3. Initialize Astro Project
+```bash
+astro dev init
+```
+
+### 4. Set Up Environment Variables
+Create a `.env` file:
+```bash
+NASA_API_KEY=your_nasa_api_key_here
+AWS_ACCESS_KEY_ID=your_aws_access_key
+AWS_SECRET_ACCESS_KEY=your_aws_secret_key
+AWS_DEFAULT_REGION=us-east-1
+```
+
+### 5. Start the Pipeline
+```bash
+# Start Airflow with Astro
+astro dev start
+
+# Access Airflow UI at http://localhost:8080
+# Default credentials: admin/admin
+```
+
+### 6. Configure Connections
+In Airflow UI, add these connections:
+
+**NASA API Connection (`nasa_api`):**
+- Connection Type: HTTP
+- Host: `https://api.nasa.gov`
+- Extra: `{"api_key": "your_nasa_api_key"}`
+
+**PostgreSQL Connection (`postgres_default`):**
+- Connection Type: Postgres
+- Host: `postgres_db`
+- Database: `postgres`
+- Username: `postgres`
+- Password: `postgres`
+
+## 📊 Pipeline Features
+
+### Current Implementation (Local)
+- ✅ Extract data from NASA APOD API
+- ✅ Transform and clean data
+- ✅ Load into PostgreSQL database
+- ✅ Error handling and retries
+- ✅ Data validation
+
+### Cloud Migration (In Progress)
+- 🔄 AWS S3 integration for data lake storage
+- 🔄 AWS Redshift for data warehousing
+- 🔄 AWS RDS for managed database
+- 🔄 Multi-destination data loading
+- 🔄 Cloud-native error handling
+
+## 🗃️ Data Schema
+
+### APOD Data Table
+```sql
+CREATE TABLE apod_data (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255),
+    explanation TEXT,
+    url TEXT,
+    date DATE,
+    media_type VARCHAR(50),
+    created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+## 🔧 Project Structure
+
+```
+├── dags/                   # Airflow DAGs
+│   ├── etl_pipeline.py    # Main ETL pipeline
+│   └── utils/             # Helper functions
+├── docker-compose.yml     # Local PostgreSQL setup
+├── requirements.txt       # Python dependencies
+├── Dockerfile            # Astro runtime image
+├── .env.example          # Environment variables template
+└── README.md             # This file
+```
+
+## 🚀 Deployment Options
+
+### Local Development
+```bash
+astro dev start
+```
+
+### Astronomer Cloud
+```bash
+astro deploy
+```
+
+### AWS MWAA (Managed Airflow)
+- Upload DAGs to S3 bucket
+- Configure MWAA environment
+- Set up IAM roles and permissions
+
+## 📈 Monitoring & Observability
+
+- **Airflow UI**: Task monitoring and logs
+- **Database Metrics**: Connection monitoring
+- **Error Alerting**: Email/Slack notifications
+- **Data Quality**: Validation checks
+
+## 🔒 Security Best Practices
+
+- API keys stored in Airflow connections
+- AWS credentials via IAM roles
+- Database passwords encrypted
+- Network isolation with Docker networks
+
+## 🚧 Roadmap
+
+### Phase 1: Local Implementation ✅
+- [x] Basic ETL pipeline
+- [x] PostgreSQL integration
+- [x] Error handling
+
+### Phase 2: Cloud Migration 🔄
+- [ ] AWS S3 data lake integration
+- [ ] Redshift data warehouse setup
+- [ ] RDS managed database
+- [ ] Multi-destination loading
+
+### Phase 3: Advanced Features 📋
+- [ ] Real-time streaming with Kinesis
+- [ ] Data quality monitoring
+- [ ] ML pipeline integration
+- [ ] Advanced scheduling strategies
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/new-feature`)
+3. Commit changes (`git commit -m 'Add new feature'`)
+4. Push to branch (`git push origin feature/new-feature`)
+5. Open a Pull Request
+
+## 📚 Resources
+
+- [Apache Airflow Documentation](https://airflow.apache.org/docs/)
+- [Astro CLI Documentation](https://docs.astronomer.io/astro/cli/overview)
+- [NASA APOD API](https://api.nasa.gov/)
+- [AWS Data Pipeline Best Practices](https://aws.amazon.com/big-data/datalakes-and-analytics/)
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 📧 Contact
+
+**Your Name** - your.email@example.com  
+**Project Link**: https://github.com/yourusername/nasa-apod-etl-pipeline
+
+---
+
+⭐ **Star this repository if you found it helpful!**
